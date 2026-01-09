@@ -88,8 +88,10 @@ describe("FourteenOne", () => {
     playShotWaitForOutcome()
     expect(container.controller).to.be.an.instanceof(Aim)
 
-    const watchEvent = broadcastEvents[3] as WatchEvent
-    expect(watchEvent.json.rerack).to.be.true
+    // Find the WatchEvent with rerack property (checkRerack sends it before super.update())
+    const rerackEvent = broadcastEvents.find((e) => e instanceof WatchEvent && (e as WatchEvent).json.rerack) as WatchEvent
+    expect(rerackEvent).to.not.be.undefined
+    expect(rerackEvent.json.rerack).to.be.true
     expect(container.recorder.shots[1].type).to.be.equal("RERACK")
   }
 

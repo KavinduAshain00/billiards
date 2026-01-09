@@ -59,6 +59,12 @@ export class Camera {
     }
   }
 
+  adjustPan(deltaX, deltaY) {
+    // Pan camera in top view by adjusting the target position
+    this.camera.position.x += deltaX
+    this.camera.position.y += deltaY
+  }
+
   suggestMode(mode) {
     if (this.mainMode === this.aimView) {
       this.mode = mode

@@ -79,7 +79,9 @@ export class NineBall implements Rules {
       if (this.container.isSinglePlayer) {
         return new PlaceBall(this.container)
       }
-      this.container.sendEvent(new PlaceBallEvent(zero, true))
+      // Multiplayer: report foul to server and wait for turn change
+      this.container.reportShotComplete(false, true, false) // potted=false, fouled=true, continues=false
+      // Do NOT send a PlaceBallEvent from the fouling client – the opponent will receive the turn-change and place the ball
       return new WatchAim(this.container)
     }
     if (Outcome.isBallPottedNoFoul(table.cueball, outcome)) {
@@ -87,21 +89,31 @@ export class NineBall implements Rules {
       this.currentBreak += pots
       this.score += pots
       this.container.sound.playSuccess(table.inPockets())
+      // Update HUD active player's pots
+      this.container.hud.updateActivePots(this.currentBreak)
       if (this.isEndOfGame(outcome)) {
         this.container.eventQueue.push(new ChatEvent(null, `game over`))
         this.container.recorder.wholeGameLink()
         return new End(this.container)
       }
-      this.container.sendEvent(new WatchEvent(table.serialise()))
+      // Player continues their turn (potted a ball, no foul)
+      if (this.container.isSinglePlayer) {
+        this.container.sendEvent(new WatchEvent(table.serialise()))
+        return new Aim(this.container)
+      }
+      // Multiplayer: report pot to server and continue
+      this.container.reportShotComplete(true, false, true) // potted=true, fouled=false, continues=true
       return new Aim(this.container)
     }
     // if no pot and no foul switch to other player
-    this.container.sendEvent(new StartAimEvent())
     if (this.container.isSinglePlayer) {
+      this.container.sendEvent(new StartAimEvent())
       this.container.sendEvent(new WatchEvent(table.serialise()))
       this.startTurn()
       return new Aim(this.container)
     }
+    // Multiplayer: report no pot to server and wait for turn change
+    this.container.reportShotComplete(false, false, false) // potted=false, fouled=false, continues=false
     return new WatchAim(this.container)
   }
 

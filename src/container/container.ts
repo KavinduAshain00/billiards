@@ -19,6 +19,7 @@ import { RuleFactory } from "../controller/rules/rulefactory"
 import { Menu } from "../view/menu"
 import { Hud } from "../view/hud"
 import { LobbyIndicator } from "../view/lobbyindicator"
+import { BallMesh } from "../view/ballmesh"
 
 /**
  * Model, View, Controller container.
@@ -46,11 +47,16 @@ export class Container {
   readonly step = 0.001953125 * 1
 
   broadcast: (event: GameEvent) => void = () => {}
+  reportShotComplete: (potted: boolean, fouled: boolean, continuesTurn: boolean) => void = () => {}
   log: (text: string) => void
 
   constructor(element, log, assets, ruletype?, keyboard?, id?) {
     this.log = log
     this.rules = RuleFactory.create(ruletype, this)
+    // Pass ball models to BallMesh before creating table
+    if (assets.ballModels && assets.ballModels.size > 0) {
+      BallMesh.ballModels = assets.ballModels
+    }
     this.table = this.rules.table()
     this.view = new View(element, this.table, assets)
     this.table.cue.aimInputs = new AimInputs(this)

@@ -22,7 +22,7 @@ export abstract class ControllerBase extends Controller {
       ),
     ]
     this.container.table.hit()
-    this.container.view.camera.suggestMode(this.container.view.camera.aimView)
+    this.container.view.camera.suggestMode(this.container.view.camera.topView)
     this.container.table.cue.showHelper(false)
   }
 
@@ -55,11 +55,11 @@ export abstract class ControllerBase extends Controller {
         cue.toggleHelper()
         return true
       case "movementXUp":
-        cue.rotateAim(delta * 2, this.container.table)
+        cue.rotateAim(-delta * 2, this.container.table)
         return true
       case "movementYUp":
       case "NumpadSubtract":
-        this.container.view.camera.adjustHeight(delta * 8)
+        this.container.view.camera.adjustHeight(-delta * 8)
         return true
       case "NumpadAdd":
         this.container.view.camera.adjustHeight(-delta * 8)

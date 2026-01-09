@@ -44,6 +44,49 @@ p {
   filter: drop-shadow(0.08em 0.08em black);
 }
 
+#playerHUD {
+  position: absolute;
+  top: 0.6em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  gap: 1.2rem;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  color: #fff;
+  align-items: center;
+}
+
+.playerPanel {
+  background: rgba(0,0,0,0.5);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 8rem;
+}
+
+.playerPanel.active {
+  background: linear-gradient(90deg, #2e9bd8, #1a6fb0);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+}
+
+.playerName {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.playerGroup {
+  font-size: 0.8rem;
+  color: #ffd27a;
+  margin-top: 0.2rem;
+}
+
+.playerPots {
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+  color: #ffffff;
+}
+
 #snookerScoreOverlay {
   position: absolute;
   bottom: 1em;

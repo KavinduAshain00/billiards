@@ -17,7 +17,7 @@ This is an open-source project bringing unsophisticated billiards physics writte
 * Presentation using WebGL in any modern browser on mobile, linux, mac or windows.
 * Record and playback breaks.
 * Two player online mode with nchan nginx server.
-* Nine ball, snooker and three cushion billiards rules.
+* Eight ball, nine ball, snooker and three cushion billiards rules.
 * Deploys to github pages, vercel.com and render.com with github actions.
 
 ## Online Demo
@@ -25,6 +25,7 @@ This is an open-source project bringing unsophisticated billiards physics writte
 Demos run in all major desktop and mobile browsers and uses WebGL
 
 * [Nine ball ⬀](https://tailuge.github.io/billiards/dist) make a break and share replay link with friends
+* [Eight ball ⬀](https://tailuge.github.io/billiards/dist?ruletype=eightball) classic 8-ball pool with official BCA rules
 * [Three cushion billiards ⬀](https://tailuge.github.io/billiards/dist?ruletype=threecushion) the ultimate test of physics and player (average on both counts)
 * [Snooker ⬀](https://tailuge.github.io/billiards/dist?ruletype=snooker) we await the first 147 submission to the leaderboard.
 * 4-ball [Straight pool ⬀](https://tailuge.github.io/billiards/dist?ruletype=fourteenone). 

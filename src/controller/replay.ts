@@ -100,7 +100,7 @@ export class Replay extends ControllerBase {
     this.container.rules.cueball = this.container.table.cueball
     this.container.table.cueball.pos.copy(aim.pos)
     this.container.table.cue.aim = aim
-    this.container.view.camera.forceMode(this.container.view.camera.aimView)
+    this.container.view.camera.forceMode(this.container.view.camera.topView)
     return new Aim(this.container)
   }
 }

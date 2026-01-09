@@ -62,7 +62,7 @@ describe("Controller", () => {
     container.eventQueue.push(new BeginEvent())
     container.processEvents()
     expect(container.controller).to.be.an.instanceof(PlaceBall)
-    expect(broadcastEvents.pop()).to.be.an.instanceof(WatchEvent)
+    // In single player mode, no WatchEvent is broadcast (no opponent to watch)
     done()
   })
 

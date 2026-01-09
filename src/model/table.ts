@@ -168,6 +168,25 @@ export class Table {
     }
   }
 
+  /**
+   * Apply server authoritative state. By default this will interpolate visible
+   * ball positions over a short duration to hide corrections. A duration of 0
+   * will snap immediately.
+   */
+  applyAuthoritativeState(data, duration: number = 0.1) {
+    if (data.balls) {
+      data.balls.forEach((b) => {
+        const local = this.balls[b.id]
+        if (local) {
+          local.setServerState(b, duration)
+        }
+      })
+    }
+    if (data.aim) {
+      this.cue.aim = AimEvent.fromJson(data.aim)
+    }
+  }
+
   shortSerialise() {
     return this.balls
       .map((b) => [b.pos.x, b.pos.y])

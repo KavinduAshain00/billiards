@@ -1,6 +1,5 @@
 import { expect } from "chai"
-import { InMemoryMessageRelay } from "../mocks/inmemorymessagerelay"
-import { MessageRelay } from "../../src/network/client/messagerelay"
+import { InMemoryMessageRelay, MessageRelay } from "../mocks/inmemorymessagerelay"
 import { BreakEvent } from "../../src/events/breakevent"
 import { EventUtil } from "../../src/events/eventutil"
 

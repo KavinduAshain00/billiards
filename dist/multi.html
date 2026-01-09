@@ -57,12 +57,13 @@
   </body>
 
   <script>
+    // Socket.IO handles transport automatically, just pass the server origin
     const server = window.location.origin
-    const wss = server.replace(/^http/, "ws") + "/ws"
-    const wssparam = `websocketserver=${wss}`
+    const serverParam = `server=${encodeURIComponent(server)}`
     const elts = document.getElementsByClassName("addwss")
     for (const elt of elts) {
-      elt.href += `&${wssparam}`
+      elt.href += `&${serverParam}`
     }
+    console.log('[multi.html] Server URL for multiplayer:', server)
   </script>
 </html>

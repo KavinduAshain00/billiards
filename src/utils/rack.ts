@@ -30,8 +30,8 @@ export class Rack {
     )
   }
 
-  static cueBall(pos) {
-    return new Ball(Rack.jitter(pos), 0xfaebd7)
+  static cueBall(pos, ballNumber?: number) {
+    return new Ball(Rack.jitter(pos), 0xfaebd7, false, ballNumber)
   }
 
   static diamond() {
@@ -64,6 +64,50 @@ export class Rack {
     const triangle = tp.map((p) => new Ball(Rack.jitter(p)))
     triangle.unshift(cueball)
     return triangle.slice(0, 5)
+  }
+
+  static fullTriangle() {
+    const tp = Rack.trianglePositions()
+    const cueball = Rack.cueBall(Rack.spot)
+    const triangle = tp.map((p) => new Ball(Rack.jitter(p)))
+    triangle.unshift(cueball)
+    return triangle
+  }
+
+  static eightBall() {
+    const tp = Rack.trianglePositions()
+    const balls: Ball[] = []
+    
+    // Cue ball (id 0) - will use cue.glb model
+    balls.push(Rack.cueBall(Rack.spot, 0))
+    
+    // Standard 8-ball rack formation
+    // Row 1: 1-ball at apex
+    balls.push(new Ball(Rack.jitter(tp[0]), 0xffcc00, false, 1))
+    
+    // Row 2: stripe-solid
+    balls.push(new Ball(Rack.jitter(tp[1]), 0xff9d00, true, 9))
+    balls.push(new Ball(Rack.jitter(tp[2]), 0xe0de36, false, 2))
+    
+    // Row 3: solid-8-stripe
+    balls.push(new Ball(Rack.jitter(tp[3]), 0x521911, false, 3))
+    balls.push(new Ball(Rack.jitter(tp[4]), 0x050505, false, 8)) // 8-ball in center
+    balls.push(new Ball(Rack.jitter(tp[5]), 0x3e009c, true, 10))
+    
+    // Row 4: alternating
+    balls.push(new Ball(Rack.jitter(tp[6]), 0x595200, false, 4))
+    balls.push(new Ball(Rack.jitter(tp[7]), 0x0a74c2, true, 11))
+    balls.push(new Ball(Rack.jitter(tp[8]), 0xff0000, false, 5))
+    balls.push(new Ball(Rack.jitter(tp[9]), 0xbd723a, true, 12))
+    
+    // Row 5: solid corners, stripes between
+    balls.push(new Ball(Rack.jitter(tp[10]), 0x087300, false, 6))
+    balls.push(new Ball(Rack.jitter(tp[11]), 0xeede36, true, 13))
+    balls.push(new Ball(Rack.jitter(tp[12]), 0x0c9664, true, 14))
+    balls.push(new Ball(Rack.jitter(tp[13]), 0xffaacc, true, 15))
+    balls.push(new Ball(Rack.jitter(tp[14]), 0xee7700, false, 7))
+    
+    return balls
   }
 
   static trianglePositions() {

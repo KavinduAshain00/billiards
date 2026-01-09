@@ -16,7 +16,8 @@ export class Aim extends ControllerBase {
     table.cue.showHelper(true)
     table.cueball = this.container.rules.cueball
     table.cue.moveTo(table.cueball.pos)
-    this.container.view.camera.suggestMode(this.container.view.camera.aimView)
+    // Suggest aimView for active player (can be toggled via camera button)
+    this.container.view.camera.forceMode(this.container.view.camera.aimView)
     table.cue.aimInputs.showOverlap()
   }
 

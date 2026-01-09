@@ -18,7 +18,7 @@ export class PlaceBall extends ControllerBase {
     super(container)
     this.container.table.cue.moveTo(this.container.table.cueball.pos)
     this.container.table.cue.aim.power = 0
-    this.container.view.camera.forceMode(this.container.view.camera.aimView)
+    this.container.view.camera.forceMode(this.container.view.camera.topView)
   }
 
   override onFirst() {
@@ -48,10 +48,10 @@ export class PlaceBall extends ControllerBase {
         break
       // use cursor movement for placing cueball
       case "movementXUp":
-        this.moveTo(0, -input.t * this.placescale * 2)
+        this.moveTo(input.t * this.placescale * 2, 0)
         break
       case "movementYUp":
-        this.moveTo(-input.t * this.placescale * 2, 0)
+        this.moveTo(0, -input.t * this.placescale * 2)
         break
       // use IJKL for placing cueball
       case "KeyI":
@@ -73,7 +73,6 @@ export class PlaceBall extends ControllerBase {
     }
 
     this.container.table.cue.moveTo(ballPos)
-    this.container.view.camera.forceMove(this.container.table.cue.aim)
     this.container.sendEvent(this.container.table.cue.aim)
 
     return this
