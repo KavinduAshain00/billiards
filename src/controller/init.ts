@@ -8,7 +8,7 @@ import { PlaceBall } from "./placeball"
 import { Replay } from "./replay"
 import { Session } from "../network/client/session"
 import { Spectate } from "./spectate"
-import { SocketEventClient } from "../network/client/socketeventclient"
+import { SocketIOMessageRelay } from "../network/client/socketiomessagerelay"
 
 /**
  * Initial state of controller.
@@ -19,34 +19,42 @@ export class Init extends ControllerBase {
   override handleBegin(_: BeginEvent): Controller {
     if (Session.isSpectator()) {
       const session = Session.getInstance()
-      // Spectators connect via the new event client
+      // Reuse existing relay if available to avoid creating multiple sockets
       const serverURL = (window as any).BACKEND_URL || 'http://localhost:3000'
-      const socketClient = new SocketEventClient(serverURL)
+      let relay: SocketIOMessageRelay
 
-      socketClient.connect(session.tableId, session.clientId, session.username, true)
+      // @ts-ignore - container may hold messageRelay
+      if (this.container.messageRelay && typeof this.container.messageRelay.connect === 'function') {
+        // reuse
+        // @ts-ignore
+        relay = this.container.messageRelay as SocketIOMessageRelay
+      } else {
+        relay = new SocketIOMessageRelay(serverURL)
+        // @ts-ignore set on container for reuse
+        this.container.messageRelay = relay
+      }
+
+      // Only call connect if not already connected or connecting
+      relay.connect(session.tableId, session.clientId, session.username, true)
         .catch((error) => {
           console.error("Failed to connect spectator:", error)
         })
-
       return new Spectate(
         this.container,
-        socketClient,
+        relay,
         session.tableId
       )
     }
 
-    console.log('[Init] handleBegin - transitioning to PlaceBall for breaking player')
-    this.container.chat.showMessage("Your turn to break")
+    this.container.chat.showMessage("Start")
+    this.container.sendEvent(new WatchEvent(this.container.table.serialise()))
     return new PlaceBall(this.container)
   }
 
   override handleWatch(event: WatchEvent): Controller {
-    console.log('[Init] handleWatch - transitioning to WatchAim for watching player')
     this.container.chat.showMessage("Opponent to break")
     this.container.rules.secondToPlay()
-    if (event.json && event.json.balls) {
-      this.container.table.updateFromSerialised(event.json)
-    }
+    this.container.table.updateFromSerialised(event.json)
     return new WatchAim(this.container)
   }
 

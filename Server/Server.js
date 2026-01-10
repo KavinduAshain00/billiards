@@ -23,18 +23,12 @@ const io = new Server(httpServer, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  },
-  // Increase ping timeout to prevent premature disconnects
-  pingTimeout: 5000,
-  pingInterval: 5000,
+  }
 });
 
 // Store game rooms and player information
 const rooms = new Map();
 
-/**
- * GameRoom class with authoritative state management
- */
 class GameRoom {
   constructor(tableId) {
     this.tableId = tableId;
@@ -42,43 +36,33 @@ class GameRoom {
     this.spectators = new Set();
     this.createdAt = Date.now();
     this.gameStarted = false;
-    this.gameState = null; // Server-authoritative game state
-    this.currentPlayer = 1; // Player 1 or 2's turn
-    this.sequence = 0; // Event sequence for ordering
-    this.readyPlayers = new Set(); // Players who signaled ready
-    this.lastCueUpdate = {}; // Last cue position per player
   }
 
   addPlayer(playerInfo) {
     if (this.players.length >= 2) {
       return { success: false, error: 'Room is full' };
     }
-
+    
     // Check if player already exists (reconnection)
     const existingPlayerIndex = this.players.findIndex(p => p.uuid === playerInfo.uuid);
     if (existingPlayerIndex !== -1) {
       // Update socket ID for reconnection
       this.players[existingPlayerIndex].socketId = playerInfo.socketId;
-      this.players[existingPlayerIndex].connected = true;
-      return {
-        success: true,
+      return { 
+        success: true, 
         playerNumber: this.players[existingPlayerIndex].playerNumber,
-        isReconnection: true,
+        isReconnection: true 
       };
     }
-
+    
     // Assign player number based on order
     const playerNumber = this.players.length + 1;
     const player = {
       ...playerInfo,
       playerNumber,
-      joinedAt: Date.now(),
-      connected: true,
-      ready: false,
-      score: 0, // server-tracked score
-      group: null, // 'solids' | 'stripes' | null
+      joinedAt: Date.now()
     };
-
+    
     this.players.push(player);
     return { success: true, playerNumber, isReconnection: false };
   }
@@ -88,10 +72,7 @@ class GameRoom {
   }
 
   removePlayer(socketId) {
-    const player = this.players.find(p => p.socketId === socketId);
-    if (player) {
-      player.connected = false;
-    }
+    this.players = this.players.filter(p => p.socketId !== socketId);
     this.spectators.delete(socketId);
   }
 
@@ -104,16 +85,11 @@ class GameRoom {
   }
 
   isEmpty() {
-    const connectedPlayers = this.players.filter(p => p.connected);
-    return connectedPlayers.length === 0 && this.spectators.size === 0;
+    return this.players.length === 0 && this.spectators.size === 0;
   }
 
   getPlayerCount() {
     return this.players.length;
-  }
-
-  getConnectedPlayerCount() {
-    return this.players.filter(p => p.connected).length;
   }
 
   isFull() {
@@ -121,161 +97,13 @@ class GameRoom {
   }
 
   canStartGame() {
-    return this.players.length === 2 && !this.gameStarted && this.getConnectedPlayerCount() === 2;
-  }
-
-  setReady(uuid) {
-    this.readyPlayers.add(uuid);
-    const player = this.getPlayerByUuid(uuid);
-    if (player) {
-      player.ready = true;
-    }
-  }
-
-  allPlayersReady() {
-    return this.players.length === 2 && this.readyPlayers.size === 2;
-  }
-
-  nextSequence() {
-    return ++this.sequence;
-  }
-
-  switchTurn() {
-    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
-    return this.currentPlayer;
-  }
-
-  getCurrentPlayerUuid() {
-    const player = this.players.find(p => p.playerNumber === this.currentPlayer);
-    return player ? player.uuid : null;
-  }
-
-  isPlayerTurn(uuid) {
-    return this.getCurrentPlayerUuid() === uuid;
-  }
-
-  getOpponent(uuid) {
-    return this.players.find(p => p.uuid !== uuid);
-  }
-
-  updateGameState(state) {
-    this.gameState = {
-      ...state,
-      sequence: this.sequence,
-      timestamp: Date.now(),
-    };
-  }
-
-  // Utility to detect potted balls between previous and current ball lists
-  detectPottedBalls(prevBalls = [], newBalls = []) {
-    const prevMap = new Map();
-    prevBalls.forEach((b) => prevMap.set(b.id, b));
-    const potted = [];
-    newBalls.forEach((b) => {
-      const prev = prevMap.get(b.id);
-      if (prev && prev.state !== 'InPocket' && b.state === 'InPocket') {
-        potted.push(b.id);
-      }
-    });
-    return potted;
-  }
-
-  updateCuePosition(uuid, cueData) {
-    this.lastCueUpdate[uuid] = {
-      ...cueData,
-      timestamp: Date.now()
-    };
+    return this.players.length === 2 && !this.gameStarted;
   }
 }
 
 io.on('connection', (socket) => {
-  logger.info(null, '✅ Client connected', { 
-    socketId: socket.id,
-    transport: socket.conn.transport.name,
-    remoteAddress: socket.handshake.address 
-  });
+  logger.info(null, 'Client connected', { socketId: socket.id });
 
-  // Log transport upgrade
-  socket.conn.on('upgrade', (transport) => {
-    logger.info(null, '🔄 Transport upgraded', { 
-      socketId: socket.id, 
-      newTransport: transport.name 
-    });
-  });
-
-  // Log disconnection with reason
-  socket.on('disconnect', (reason) => {
-    logger.info(null, '🔌 Client disconnected', { 
-      socketId: socket.id, 
-      reason 
-    });
-
-    // Find and update rooms
-    for (const [tableId, room] of rooms.entries()) {
-      const player = room.getPlayerBySocketId(socket.id);
-      const isSpectator = room.spectators.has(socket.id);
-      
-      if (player || isSpectator) {
-        room.removePlayer(socket.id);
-
-        // Notify other players
-        if (player) {
-          io.to(tableId).emit('player-left', {
-            clientId: player.uuid,
-            username: player.name,
-            playerNumber: player.playerNumber,
-            playerCount: room.getConnectedPlayerCount()
-          });
-
-          logger.info(tableId, 'Player disconnected', {
-            username: player.name,
-            playerNumber: player.playerNumber,
-            connectedPlayers: room.getConnectedPlayerCount(),
-            reason
-          });
-
-          // If game was in progress, notify about potential forfeit
-          if (room.gameStarted && room.getConnectedPlayerCount() === 1) {
-            // Give some time for reconnection before declaring forfeit
-            setTimeout(() => {
-              const currentRoom = rooms.get(tableId);
-              if (currentRoom && currentRoom.getConnectedPlayerCount() === 1) {
-                const remainingPlayer = currentRoom.players.find(p => p.connected);
-                if (remainingPlayer) {
-                  io.to(tableId).emit('gameOver', {
-                    winner: remainingPlayer.playerNumber,
-                    reason: 'opponent_disconnected'
-                  });
-                }
-              }
-            }, 30000); // 30 second grace period for reconnection
-          }
-        } else {
-          logger.info(tableId, 'Spectator left room');
-        }
-
-        // Clean up empty rooms after grace period
-        setTimeout(() => {
-          const currentRoom = rooms.get(tableId);
-          if (currentRoom && currentRoom.isEmpty()) {
-            rooms.delete(tableId);
-            logger.info(tableId, 'Room deleted (empty)');
-          }
-        }, 60000);
-
-        break;
-      }
-    }
-  });
-
-  socket.on('error', (error) => {
-    logger.error(null, '❌ Socket error', { 
-      socketId: socket.id, 
-      error: error.message 
-    });
-  });
-
-  // ========== JOIN TABLE ==========
   socket.on('join-table', async ({ tableId, clientId, username, spectator }) => {
     logger.info(tableId, 'Join table request', { 
       socketId: socket.id, 
@@ -303,355 +131,181 @@ io.on('connection', (socket) => {
         username,
         spectator: true,
         playerCount: room.getPlayerCount(),
-        role: 'spectator',
-        gameStarted: room.gameStarted
+        role: 'spectator'
       });
 
-      // Send current game state to spectator if game in progress
-      if (room.gameState) {
-        socket.emit('game-state', room.gameState);
-      }
+      // Notify others
+      socket.to(tableId).emit('player-joined', {
+        clientId,
+        username,
+        spectator: true,
+        playerCount: room.getPlayerCount()
+      });
 
       logger.info(tableId, 'Spectator joined');
-      return;
-    }
+    } else {
+      // Validate player against database
+      try {
+        const dbRoom = await Room.findOne({ gameSessionUuid: tableId });
+        if (dbRoom) {
+          const validPlayer = dbRoom.players.find(p => p.uuid === clientId);
+          if (!validPlayer) {
+            logger.warn(tableId, `Unauthorized player ${clientId} attempting to join`);
+            socket.emit('joined', {
+              success: false,
+              error: 'Unauthorized: UUID not registered for this game',
+              tableId
+            });
+            return;
+          }
 
-    // Validate player against database
-    try {
-      const dbRoom = await Room.findOne({ gameSessionUuid: tableId });
-      if (dbRoom) {
-        const validPlayer = dbRoom.players.find(p => p.uuid === clientId);
-        if (!validPlayer) {
-          logger.warn(tableId, `Unauthorized player ${clientId} attempting to join`);
-          socket.emit('joined', {
-            success: false,
-            error: 'Unauthorized: UUID not registered for this game',
-            tableId
-          });
-          return;
+          // Use the name from DB if client didn't provide one
+          if (!username || username.trim() === '') {
+            username = validPlayer.name || ''
+          }
         }
-
-        // Use the name from DB if client didn't provide one
-        if (!username || username.trim() === '') {
-          username = validPlayer.name || '';
-        }
+      } catch (err) {
+        logger.error(tableId, 'Database error during join validation:', err);
       }
-    } catch (err) {
-      logger.error(tableId, 'Database error during join validation:', err);
-    }
 
-    // Try to add as player
-    const playerInfo = {
-      uuid: clientId,
-      name: username,
-      socketId: socket.id
-    };
+      // Try to add as player
+      const playerInfo = {
+        uuid: clientId,
+        name: username,
+        socketId: socket.id
+      };
 
-    const result = room.addPlayer(playerInfo);
-    
-    if (!result.success) {
+      const result = room.addPlayer(playerInfo);
+      
+      if (!result.success) {
+        socket.emit('joined', {
+          success: false,
+          error: result.error,
+          tableId
+        });
+        logger.warn(tableId, result.error);
+        return;
+      }
+
+      socket.join(tableId);
+
+      // Send joined confirmation with player number
       socket.emit('joined', {
-        success: false,
-        error: result.error,
-        tableId
+        success: true,
+        tableId,
+        clientId,
+        username,
+        spectator: false,
+        playerCount: room.getPlayerCount(),
+        playerNumber: result.playerNumber,
+        isFirstPlayer: result.playerNumber === 1,
+        role: 'player'
       });
-      logger.warn(tableId, result.error);
+
+      logger.info(tableId, `Player joined as Player ${result.playerNumber}`, {
+        username,
+        playerCount: room.getPlayerCount()
+      });
+
+      // Notify others about new player
+      socket.to(tableId).emit('player-joined', {
+        clientId,
+        username,
+        spectator: false,
+        playerCount: room.getPlayerCount(),
+        playerNumber: result.playerNumber
+      });
+
+      // If both players are now present, notify them to start the game
+      if (room.canStartGame()) {
+        room.gameStarted = true;
+        logger.info(tableId, '🎮 Both players connected - game can start!');
+        
+        // Emit game ready event to all players
+        io.to(tableId).emit('game-ready', {
+          players: room.players.map(p => ({
+            playerNumber: p.playerNumber,
+            name: p.name,
+            uuid: p.uuid
+          })),
+          message: 'Both players connected. Game starting!'
+        });
+        
+        // Also emit a begin event to trigger the game start
+        setTimeout(() => {
+          io.to(tableId).emit('game-event', JSON.stringify({
+            type: 'begin',
+            clientId: room.players[0].uuid,
+            timestamp: Date.now()
+          }));
+        }, 500);
+      }
+    }
+  });
+
+  socket.on('game-event', ({ tableId, event }) => {
+    if (!tableId || !event) {
+      logger.warn(null, 'Invalid game event data', { socketId: socket.id });
       return;
     }
 
-    socket.join(tableId);
-
-    // Get opponent info if exists
-    const opponent = room.getOpponent(clientId);
-
-    // Send joined confirmation with player number
-    socket.emit('joined', {
-      success: true,
-      tableId,
-      clientId,
-      username,
-      spectator: false,
-      playerCount: room.getPlayerCount(),
-      playerNumber: result.playerNumber,
-      isFirstPlayer: result.playerNumber === 1,
-      role: 'player',
-      opponentName: opponent?.name || null,
-      opponentConnected: opponent?.connected || false,
-      waitingForOpponent: room.getPlayerCount() < 2
-    });
-
-    logger.info(tableId, `Player joined as Player ${result.playerNumber}`, {
-      username,
-      playerCount: room.getPlayerCount()
-    });
-
-    // Notify others about new player
-    socket.to(tableId).emit('player-joined', {
-      clientId,
-      username,
-      spectator: false,
-      playerCount: room.getPlayerCount(),
-      playerNumber: result.playerNumber
-    });
-
-    // If both players are now present, emit game-ready (but don't start yet)
-    if (room.canStartGame()) {
-      logger.info(tableId, '🎮 Both players connected - waiting for ready signals');
-      
-      // Emit game ready event to all players
-      io.to(tableId).emit('game-ready', {
-        players: room.players.map(p => ({
-          playerNumber: p.playerNumber,
-          name: p.name,
-          uuid: p.uuid
-        })),
-        message: 'Both players connected. Waiting for ready signals.',
-        firstPlayer: 1
-      });
-    }
-  });
-
-  // ========== PLAYER READY ==========
-  socket.on('ready', ({ tableId }) => {
-    const room = rooms.get(tableId);
-    if (!room) return;
-
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) return;
-
-    room.setReady(player.uuid);
-    logger.info(tableId, `Player ${player.playerNumber} is ready`);
-
-    // Check if all players are ready to start
-    if (room.allPlayersReady() && !room.gameStarted) {
-      room.gameStarted = true;
-      room.currentPlayer = 1;
-      
-      logger.info(tableId, '🎮 All players ready - starting game!');
-      
-      // Emit initial score and group state (server authoritative)
-      io.to(tableId).emit('score-update', {
-        scores: room.players.reduce((acc, p) => { acc[p.playerNumber] = 0; return acc; }, {})
-      });
-      io.to(tableId).emit('group-update', {
-        groups: room.players.reduce((acc, p) => { acc[p.playerNumber] = null; return acc; }, {})
-      });
-      
-      // Emit game start event
-      io.to(tableId).emit('game-start', {
-        firstPlayer: 1,
-        tableState: room.gameState,
-        timestamp: Date.now()
-      });
-    }
-  });
-
-  // ========== CUE AIMING (Real-time sync) ==========
-  socket.on('cue-aim', ({ tableId, angle, power, offset, pos }) => {
-    const room = rooms.get(tableId);
-    if (!room) return;
-
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) return;
-
-    // Store cue position on server
-    room.updateCuePosition(player.uuid, { angle, power, offset, pos });
-
-    // Broadcast to opponent and spectators (not to sender)
-    socket.to(tableId).emit('cue-update', {
-      playerId: player.uuid,
-      playerNumber: player.playerNumber,
-      angle,
-      power,
-      offset,
-      pos,
-      timestamp: Date.now()
-    });
-  });
-
-  // ========== SHOT REQUEST (Server validates) ==========
-  socket.on('shot-request', ({ tableId, tableState, power, angle, offset, timestamp }) => {
     const room = rooms.get(tableId);
     if (!room) {
-      socket.emit('shot-rejected', { reason: 'Room not found', correctState: null });
+      logger.warn(tableId, 'Room not found', { socketId: socket.id });
       return;
     }
 
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) {
-      socket.emit('shot-rejected', { reason: 'Player not in room', correctState: null });
-      return;
-    }
-
-    // Validate it's the player's turn
-    if (!room.isPlayerTurn(player.uuid)) {
-      logger.warn(tableId, `Player ${player.uuid} tried to shoot but it's not their turn`);
-      socket.emit('shot-rejected', { 
-        reason: 'Not your turn', 
-        correctState: room.gameState 
-      });
-      return;
-    }
-
-    // Accept the shot and update server state
-    const sequence = room.nextSequence();
-    // Capture previous balls for pot detection
-    const prevBalls = room.gameState && room.gameState.balls ? room.gameState.balls : [];
-    room.updateGameState(tableState);
+    // Broadcast the event to all other clients in the room
+    socket.to(tableId).emit('game-event', event);
     
-    // Detect potted balls and update server-side groups/scores
-    const pottedIds = room.detectPottedBalls(prevBalls, tableState.balls || []);
-    if (pottedIds && pottedIds.length > 0) {
-      // Basic scoring: increment player's score by potted count
-      player.score = (player.score || 0) + pottedIds.length;
+    logger.debug(tableId, 'Game event broadcasted', { 
+      socketId: socket.id,
+      eventType: typeof event === 'string' ? 'string' : event.type 
+    });
+  });
 
-      // If groups not assigned and this is eightball-like (1-7 solids, 9-15 stripes), assign groups
-      if (player.group === null) {
-        // Find first potted ball that is not the 8-ball
-        const ballId = pottedIds.find(id => id !== 8);
-        if (ballId && ballId <= 7) {
-          player.group = 'solids';
-          const opp = room.getOpponent(player.uuid);
-          if (opp) opp.group = 'stripes';
-        } else if (ballId && ballId >= 9) {
-          player.group = 'stripes';
-          const opp = room.getOpponent(player.uuid);
-          if (opp) opp.group = 'solids';
+  socket.on('disconnect', () => {
+    logger.info(null, 'Client disconnected', { socketId: socket.id });
+
+    // Find and clean up rooms
+    for (const [tableId, room] of rooms.entries()) {
+      const player = room.getPlayerBySocketId(socket.id);
+      const isSpectator = room.spectators.has(socket.id);
+      
+      if (player || isSpectator) {
+        room.removePlayer(socket.id);
+
+        // Notify other players
+        if (player) {
+          io.to(tableId).emit('player-left', {
+            clientId: player.uuid,
+            username: player.name,
+            playerNumber: player.playerNumber,
+            playerCount: room.getPlayerCount()
+          });
+
+          logger.info(tableId, 'Player left room', {
+            username: player.name,
+            playerNumber: player.playerNumber,
+            playerCount: room.getPlayerCount()
+          });
+        } else {
+          logger.info(tableId, 'Spectator left room');
         }
+
+        // Clean up empty rooms
+        if (room.isEmpty()) {
+          rooms.delete(tableId);
+          logger.info({ tableId }, 'Room deleted (empty)');
+        }
+
+        break;
       }
-
-      // Emit score update and group update for UI
-      io.to(tableId).emit('score-update', {
-        scores: this.players.reduce((acc, p) => {
-          acc[p.playerNumber] = p.score || 0;
-          return acc;
-        }, {})
-      });
-
-      io.to(tableId).emit('group-update', {
-        groups: this.players.reduce((acc, p) => {
-          acc[p.playerNumber] = p.group || null;
-          return acc;
-        }, {})
-      });
-    }
-    
-    logger.info(tableId, `Shot validated for Player ${player.playerNumber}`, {
-      power,
-      angle,
-      sequence,
-      pottedIds
-    });
-
-    // Broadcast validated shot to all players (including sender for confirmation)
-    io.to(tableId).emit('shot-validated', {
-      accepted: true,
-      tableState,
-      playerId: player.uuid,
-      playerNumber: player.playerNumber,
-      sequence,
-      timestamp: Date.now(),
-      potted: pottedIds
-    });
-
-    // NOTE: Turn change is now handled by shot-complete event
-    // The shooting player will report when balls stop and whether they pot/foul
-  });
-
-  // ========== SHOT COMPLETE (Client reports outcome) ==========
-  socket.on('shot-complete', ({ tableId, potted, fouled, continuesTurn }) => {
-    const room = rooms.get(tableId);
-    if (!room) return;
-
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) return;
-
-    // Only the shooting player can report shot completion
-    if (!room.isPlayerTurn(player.uuid)) {
-      logger.warn(tableId, `Player ${player.uuid} tried to report shot-complete but it's not their turn`);
-      return;
-    }
-
-    logger.info(tableId, `Shot complete for Player ${player.playerNumber}`, {
-      potted,
-      fouled,
-      continuesTurn
-    });
-
-    if (continuesTurn && !fouled) {
-      // Player continues their turn (potted a ball, no foul)
-      io.to(tableId).emit('turn-continues', {
-        currentPlayer: player.playerNumber,
-        playerId: player.uuid,
-        reason: potted ? 'ball-potted' : 'continue'
-      });
-    } else {
-      // Switch turn
-      const newCurrentPlayer = room.switchTurn();
-      const currentPlayerUuid = room.getCurrentPlayerUuid();
-
-      logger.info(tableId, `Turn changed to Player ${newCurrentPlayer} (${currentPlayerUuid})`);
-
-      io.to(tableId).emit('turn-change', {
-        currentPlayer: newCurrentPlayer,
-        playerId: currentPlayerUuid,
-        reason: fouled ? 'foul' : 'no-pot',
-        placeRequired: fouled,
-        placePlayerId: fouled ? currentPlayerUuid : null
-      });
     }
   });
 
-  // ========== BALL PLACEMENT ==========
-  socket.on('place-ball', ({ tableId, position }) => {
-    const room = rooms.get(tableId);
-    if (!room) return;
-
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) return;
-
-    // Validate it's the player's turn
-    if (!room.isPlayerTurn(player.uuid)) {
-      logger.warn(tableId, `Player ${player.uuid} tried to place ball but it's not their turn`);
-      return;
-    }
-
-    // Broadcast ball placement to all
-    io.to(tableId).emit('ball-positions', {
-      balls: [{ id: 0, pos: position, vel: { x: 0, y: 0, z: 0 }, state: 'placed' }],
-      timestamp: Date.now()
-    });
-
-    logger.info(tableId, `Player ${player.playerNumber} placed cue ball`, { position });
-  });
-
-  // ========== TURN CHANGE ==========
-  socket.on('turn-complete', ({ tableId, nextPlayer }) => {
-    const room = rooms.get(tableId);
-    if (!room) return;
-
-    const player = room.getPlayerBySocketId(socket.id);
-    if (!player) return;
-
-    // Only the server decides turn changes
-    const newCurrentPlayer = room.switchTurn();
-    const currentPlayerUuid = room.getCurrentPlayerUuid();
-
-    io.to(tableId).emit('turn-change', {
-      currentPlayer: newCurrentPlayer,
-      playerId: currentPlayerUuid,
-      reason: 'shot-complete'
-    });
-
-    logger.info(tableId, `Turn changed to Player ${newCurrentPlayer}`);
-  });
-
-  // ========== GAME STATE SYNC REQUEST ==========
-  socket.on('request-state', ({ tableId }) => {
-    const room = rooms.get(tableId);
-    if (!room || !room.gameState) return;
-
-    socket.emit('game-state', room.gameState);
+  socket.on('error', (error) => {
+    logger.error(null, 'Socket error', { socketId: socket.id, error });
   });
 });
 

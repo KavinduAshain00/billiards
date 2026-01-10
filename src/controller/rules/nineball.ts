@@ -89,8 +89,6 @@ export class NineBall implements Rules {
       this.currentBreak += pots
       this.score += pots
       this.container.sound.playSuccess(table.inPockets())
-      // Update HUD active player's pots
-      this.container.hud.updateActivePots(this.currentBreak)
       if (this.isEndOfGame(outcome)) {
         this.container.eventQueue.push(new ChatEvent(null, `game over`))
         this.container.recorder.wholeGameLink()

@@ -23,19 +23,19 @@
   </head>
 
   <body>
-    <div id="viewP1" class="view3d">
-      <div id="playerHUD">
-        <div class="playerPanel" id="playerYou">
-          <div class="playerName" id="playerYouName">You</div>
-          <div class="playerGroup" id="playerYouGroup"></div>
-          <div class="playerPots" id="playerYouPots">0</div>
-        </div>
-        <div class="playerPanel" id="playerOpp">
-          <div class="playerName" id="playerOppName">Opponent</div>
-          <div class="playerGroup" id="playerOppGroup"></div>
-          <div class="playerPots" id="playerOppPots">0</div>
-        </div>
+    <div id="playerInfo" class="player-info">
+      <div id="player1Container" class="player-container">
+        <span id="player1Name" class="player-name">Player 1</span>
+        <span id="player1Type" class="ball-type"></span>
+        <span id="player1Potted" class="potted-count">Potted: 0</span>
       </div>
+      <div id="player2Container" class="player-container">
+        <span id="player2Name" class="player-name">Player 2</span>
+        <span id="player2Type" class="ball-type"></span>
+        <span id="player2Potted" class="potted-count">Potted: 0</span>
+      </div>
+    </div>
+    <div id="viewP1" class="view3d">
       <div id="snookerScoreOverlay"><div id="snookerScore"></div></div>
     </div>
     <div class="panel">

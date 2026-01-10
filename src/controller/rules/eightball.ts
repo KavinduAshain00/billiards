@@ -97,11 +97,11 @@ export class EightBall implements Rules {
   getPlayerBalls(): Ball[] {
     const table = this.container.table
     if (this.playerGroup === null) return []
-
+    
     if (this.playerGroup === "solids") {
-      return table.balls.filter((b) => b.id >= 1 && b.id <= 7 && b.onTable())
+      return table.balls.filter(b => b.id >= 1 && b.id <= 7 && b.onTable())
     } else {
-      return table.balls.filter((b) => b.id >= 9 && b.id <= 15 && b.onTable())
+      return table.balls.filter(b => b.id >= 9 && b.id <= 15 && b.onTable())
     }
   }
 
@@ -393,8 +393,6 @@ export class EightBall implements Rules {
       this.currentBreak += validPots.length
       this.score += validPots.length
       this.container.sound.playSuccess(table.inPockets())
-      // Update HUD
-      this.container.hud.updateActivePots(this.currentBreak)
       if (this.container.isSinglePlayer) {
         this.container.sendEvent(new WatchEvent(table.serialise()))
         return new Aim(this.container)
