@@ -59,10 +59,3 @@ node_modules/
 .next
 connect4withReact/
 .DS_Store
-/connect4withReact
-/Server/node_modules
-/Server/.env
-/Client/node_modules
-/Client/.env
-/Server/logs
-/Server/dist

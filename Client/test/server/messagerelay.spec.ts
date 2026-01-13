@@ -1,7 +1,7 @@
-import { expect } from "../../Client/node_modules/@types/chai"
+import { expect } from "chai"
 import { InMemoryMessageRelay, MessageRelay } from "../mocks/inmemorymessagerelay"
-import { BreakEvent } from "../../Client/src/events/breakevent"
-import { EventUtil } from "../../Client/src/events/eventutil"
+import { BreakEvent } from "../../src/events/breakevent"
+import { EventUtil } from "../../src/events/eventutil"
 
 const jestConsole = console
 

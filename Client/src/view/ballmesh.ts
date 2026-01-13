@@ -11,7 +11,7 @@ import {
   Vector3,
 } from "three"
 import { State } from "../model/ball"
-import { norm, up, zero } from "./../utils/utils"
+import { norm, up, zero } from "../utils/utils"
 import { R } from "../model/physics/constants"
 import { Trace } from "./trace"
 

@@ -1,5 +1,5 @@
 import { Vector3 } from "three"
-import { Controller } from "../../controller/controller"
+import { Controller } from "../controller"
 import { Ball } from "../../model/ball"
 import { Outcome } from "../../model/outcome"
 import { Table } from "../../model/table"

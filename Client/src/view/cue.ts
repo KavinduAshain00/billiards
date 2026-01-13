@@ -1,4 +1,4 @@
-import { TableGeometry } from "../view/tablegeometry"
+import { TableGeometry } from "./tablegeometry"
 import { Table } from "../model/table"
 import { upCross, unitAtAngle, norm, atan2, sin } from "../utils/utils"
 import { AimEvent } from "../events/aimevent"

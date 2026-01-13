@@ -5,7 +5,7 @@ import {
   rollingFull,
   sliding,
   surfaceVelocityFull,
-} from "../model/physics/physics"
+} from "./physics/physics"
 import { BallMesh } from "../view/ballmesh"
 import { Pocket } from "./physics/pocket"
 
