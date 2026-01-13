@@ -8,7 +8,7 @@ import { PlaceBall } from "./placeball"
 import { Replay } from "./replay"
 import { Session } from "../network/client/session"
 import { Spectate } from "./spectate"
-import { SocketIOMessageRelay } from "../network/client/socketiomessagerelay"
+import { NchanMessageRelay } from "../network/client/nchanmessagerelay"
 
 /**
  * Initial state of controller.
@@ -18,31 +18,10 @@ import { SocketIOMessageRelay } from "../network/client/socketiomessagerelay"
 export class Init extends ControllerBase {
   override handleBegin(_: BeginEvent): Controller {
     if (Session.isSpectator()) {
-      const session = Session.getInstance()
-      // Reuse existing relay if available to avoid creating multiple sockets
-      const serverURL = (window as any).BACKEND_URL || 'http://localhost:3000'
-      let relay: SocketIOMessageRelay
-
-      // @ts-ignore - container may hold messageRelay
-      if (this.container.messageRelay && typeof this.container.messageRelay.connect === 'function') {
-        // reuse
-        // @ts-ignore
-        relay = this.container.messageRelay as SocketIOMessageRelay
-      } else {
-        relay = new SocketIOMessageRelay(serverURL)
-        // @ts-ignore set on container for reuse
-        this.container.messageRelay = relay
-      }
-
-      // Only call connect if not already connected or connecting
-      relay.connect(session.tableId, session.clientId, session.username, true)
-        .catch((error) => {
-          console.error("Failed to connect spectator:", error)
-        })
       return new Spectate(
         this.container,
-        relay,
-        session.tableId
+        new NchanMessageRelay(),
+        Session.getInstance().tableId
       )
     }
 
