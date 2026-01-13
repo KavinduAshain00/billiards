@@ -2,13 +2,24 @@ import { Input } from "./input"
 import interact from "interactjs"
 
 /**
- * Maintains a map of pressed keys.
- *
- * Produces events while key is pressed with elapsed time
+ * Input System for Billiards
+ * 
+ * Handles keyboard and mouse/touch input for cue control:
+ * - Keyboard: Arrow keys for fine control, Space for power/shoot
+ * - Mouse/Touch drag: 
+ *   - Horizontal (X): Rotate cue aim direction
+ *   - Vertical (Y): Adjust shot power (drag up = more power)
+ * 
+ * The input produces events with elapsed time (t) for smooth, frame-rate independent control.
  */
 export class Keyboard {
   pressed = {}
   released = {}
+  
+  // Accumulated mouse movement for current frame
+  private dragX: number = 0
+  private dragY: number = 0
+  private isDragging: boolean = false
 
   getEvents() {
     const keys = Object.keys(this.pressed)
@@ -29,6 +40,21 @@ export class Keyboard {
     Object.keys(this.released).forEach((key) =>
       result.push(new Input(this.released[key], key + "Up"))
     )
+    
+    // Process accumulated drag movements
+    if (this.isDragging) {
+      // X movement: cue rotation (horizontal drag)
+      if (Math.abs(this.dragX) > 1.0) {
+        result.push(new Input(this.dragX, "dragRotate"))
+      }
+      // Y movement: power adjustment (vertical drag)
+      if (Math.abs(this.dragY) > 1.0) {
+        result.push(new Input(this.dragY, "dragPower"))
+      }
+      // Reset accumulated drag
+      this.dragX = 0
+      this.dragY = 0
+    }
 
     this.released = {}
     return result
@@ -60,17 +86,30 @@ export class Keyboard {
     }
   }
 
-  mousetouch = (e) => {
-    const k = this.released
+  /**
+   * Handle mouse/touch drag events
+   * Maps screen coordinates to game controls:
+   * - Drag left/right: Rotate cue
+   * - Drag up/down: Adjust power
+   */
+  private onDragMove = (e) => {
+    this.isDragging = true
+    
+    // Sensitivity modifiers (reduced for smoother control)
     const topHalf = e.client.y < e.rect.height / 2
-    const factor = topHalf || e.ctrlKey ? 0.5 : 1
-    const dx = e.dx * factor
-    const dy = e.dy * 0.8
-    k["movementY"] = (k["movementY"] ?? 0.0) + dy
-    k["movementX"] = (k["movementX"] ?? 0.0) + dx
-    if (Math.abs(k["movementX"]) > Math.abs(k["movementY"])) {
-      k["movementY"] = 0
-    }
+    const finePrecision = topHalf || e.ctrlKey
+    // Decreased overall sensitivity: default 0.5, fine precision 0.25
+    const sensitivity = finePrecision ? 0.25 : 0.5
+    
+    // Accumulate drag movement
+    // X: horizontal drag for rotation
+    this.dragX += e.dx * sensitivity
+    // Y: vertical drag for power (inverted: drag up = negative dy = increase power)
+    this.dragY += -e.dy * sensitivity
+  }
+  
+  private onDragEnd = () => {
+    this.isDragging = false
   }
 
   private addHandlers(element: HTMLCanvasElement) {
@@ -80,16 +119,18 @@ export class Keyboard {
 
     interact(element).draggable({
       listeners: {
-        move: (e) => {
-          this.mousetouch(e)
-        },
+        move: this.onDragMove,
+        end: this.onDragEnd,
       },
     })
+    
     interact(element).gesturable({
       onmove: (e) => {
-        e.dx /= 3
-        this.mousetouch(e)
+        // Gestures (pinch/rotate) - reduce sensitivity
+        const gestureEvent = { ...e, dx: e.dx / 3, dy: e.dy / 3 }
+        this.onDragMove(gestureEvent)
       },
+      onend: this.onDragEnd,
     })
   }
 }

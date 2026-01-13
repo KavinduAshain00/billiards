@@ -3,9 +3,9 @@ import { WatchAim } from "./watchaim"
 import { Init } from "./init"
 import { PlayShot } from "./playshot"
 import { WatchShot } from "./watchshot"
-import { Replay } from "./replay"
 import { End } from "./end"
 import { PlaceBall } from "./placeball"
+import { PlayShotAuthoritative } from "./playshotauthoritative"
 
 export function controllerName(c): string {
   if (c instanceof Init) {
@@ -23,11 +23,11 @@ export function controllerName(c): string {
   if (c instanceof PlayShot) {
     return "PlayShot"
   }
+  if (c instanceof PlayShotAuthoritative) {
+    return "PlayShotAuthoritative"
+  }
   if (c instanceof WatchShot) {
     return "WatchShot"
-  }
-  if (c instanceof Replay) {
-    return "Replay"
   }
   if (c instanceof End) {
     return "End"

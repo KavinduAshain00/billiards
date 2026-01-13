@@ -24,7 +24,7 @@ export class Ball {
   readonly futurePos: Vector3 = zero.clone()
   readonly ballmesh: BallMesh
   state: State = State.Stationary
-  pocket: Pocket
+  pocket: Pocket | null = null
 
   // interpolation targets for server-authoritative updates
   targetPos: Vector3 | null = null
@@ -43,9 +43,18 @@ export class Ball {
     this.ballmesh = new BallMesh(color || 0xeeeeee * Math.random(), isStripe, ballNumber)
   }
 
+  /**
+   * Update ball number (for 8-ball when server sends randomized rack)
+   * This updates the visual mesh to show the correct ball color/number
+   */
+  setBallNumber(ballNumber: number) {
+    this.ballmesh.setBallNumber(ballNumber)
+  }
+
   update(t) {
     this.updatePosition(t)
-    if (this.state == State.Falling) {
+    // Only call updateFall if we have a pocket reference (server authoritative state may set Falling without providing pocket)
+    if (this.state === State.Falling && this.pocket) {
       this.pocket.updateFall(this, t)
     } else {
       this.updateVelocity(t)

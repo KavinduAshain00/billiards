@@ -11,6 +11,9 @@ export class WatchShot extends ControllerBase {
     this.container.table.hit()
     // Force topView when watching shot - user can manually toggle via camera button (KeyO)
     this.container.view.camera.forceMode(this.container.view.camera.topView)
+    
+    // Hide cue while shot is playing
+    this.container.table.cue.mesh.visible = false
   }
 
   override handleStationary(_) {

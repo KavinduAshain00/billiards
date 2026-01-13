@@ -38,9 +38,6 @@ div {
   color: #888;
 }
 
-.view3d {
-  margin-top: 60px;
-}
 
 h1,
 p {
@@ -99,9 +96,24 @@ p {
   filter: drop-shadow(0.04em 0.04em black);
 }
 
+/* Ping indicator */
+#pingIndicator {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-size: small;
+  color: #9ad3ac;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  filter: drop-shadow(0.04em 0.04em black);
+  z-index: 1000;
+}
+
 .view3d {
   width: 100%;
-  height: 83%;
+  height: 85%;
   cursor: none;
   caret-color: transparent;
   -webkit-user-select: none;

@@ -1,26 +1,17 @@
 import { ControllerBase } from "./controllerbase"
 import { AimEvent, Controller, HitEvent, Input } from "./controller"
-import { MessageRelay } from "../network/client/messagerelay.ts"
-import { EventUtil } from "../events/eventutil"
 import { GameEvent } from "../events/gameevent"
 
+/**
+ * Spectator mode controller
+ * Watches the game without being able to interact
+ */
 export class Spectate extends ControllerBase {
-  messageRelay: MessageRelay
-  tableId: string
   messages: GameEvent[] = []
-  constructor(container, messageRelay, tableId) {
+  
+  constructor(container) {
     super(container)
-    this.messageRelay = messageRelay
-    this.tableId = tableId
-    this.messageRelay.subscribe(this.tableId, (message) => {
-      console.log(message)
-      const event = EventUtil.fromSerialised(message)
-      this.messages.push(event)
-      if (event instanceof HitEvent || event instanceof AimEvent) {
-        this.container.eventQueue.push(event)
-      }
-    })
-    console.log("Spectate")
+    console.log("Spectate mode")
   }
 
   override handleAim(event: AimEvent) {

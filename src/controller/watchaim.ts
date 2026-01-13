@@ -13,6 +13,10 @@ export class WatchAim extends ControllerBase {
     this.container.table.cue.moveTo(this.container.table.cueball.pos)
     // Force topView when watching - user can manually toggle via camera button (KeyO)
     this.container.view.camera.forceMode(this.container.view.camera.topView)
+    
+    // Show opponent's cue while watching (they're aiming)
+    this.container.table.cue.mesh.visible = true
+    this.container.table.cue.helperMesh.visible = false // Don't show our helper
   }
 
   override handleAim(event: AimEvent) {

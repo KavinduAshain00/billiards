@@ -187,6 +187,26 @@ export class Table {
     }
   }
 
+  /**
+   * Apply initial server state at game start.
+   * This sets up ball numbers/colors for 8-ball and snaps positions immediately.
+   */
+  applyInitialServerState(data) {
+    if (data.balls) {
+      data.balls.forEach((b) => {
+        const local = this.balls[b.id]
+        if (local) {
+          // Apply ball number for color matching
+          if (b.ballNumber !== undefined) {
+            local.setBallNumber(b.ballNumber)
+          }
+          // Snap position immediately (no interpolation at game start)
+          local.setServerState(b, 0)
+        }
+      })
+    }
+  }
+
   shortSerialise() {
     return this.balls
       .map((b) => [b.pos.x, b.pos.y])

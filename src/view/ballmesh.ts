@@ -19,8 +19,10 @@ export class BallMesh {
   static ballModels: Map<number, Mesh> = new Map()
   static sharedGeometries: Map<number, any> = new Map()
   static sharedMaterials: Map<number, any> = new Map()
+  // Multiplayer mode - skip shadow rendering for performance
+  static isMultiplayer: boolean = false
   mesh: Mesh
-  shadow: Mesh
+  shadow: Mesh | null = null
   spinAxisArrow: ArrowHelper
   trace: Trace
   color: Color
@@ -42,9 +44,36 @@ export class BallMesh {
     }
   }
 
+  // light direction used to project the shadow onto the table (small horizontal offset)
+  readonly shadowLightDir = new Vector3(-0.4, -0.6, -1).normalize()
+  readonly shadowOffset = new Vector3()
+
   updatePosition(pos) {
+    // Move the ball
     this.mesh.position.copy(pos)
-    this.shadow.position.copy(pos)
+
+    // Skip shadow updates in multiplayer mode
+    if (!this.shadow) return
+
+    // Project shadow onto table surface (z=0). Avoid following the ball's z directly.
+    // Compute 2D offset from ball height using a fixed light direction so the shadow
+    // subtly shifts away from the ball when the ball is lifted.
+    const height = Math.max(0, pos.z)
+    const offsetScale = 0.6 // how strongly height affects the shadow offset
+    this.shadowOffset.set(
+      this.shadowLightDir.x * height * offsetScale,
+      this.shadowLightDir.y * height * offsetScale,
+      0
+    )
+
+    // Place shadow at table surface (slightly above z=0 to avoid z-fighting with table cloth)
+    this.shadow.position.set(pos.x + this.shadowOffset.x, pos.y + this.shadowOffset.y, 0.001)
+
+    // Scale shadow based on ball height (higher ball = smaller shadow)
+    const minScale = 0.4
+    const maxScale = 1.0
+    const scale = Math.max(minScale, Math.min(maxScale, 1 - height / (R * 2)))
+    this.shadow.scale.set(scale, scale, 1)
   }
 
   readonly m = new Matrix4()
@@ -99,12 +128,13 @@ export class BallMesh {
     }
     this.updateRotation(new Vector3().random(), 100)
 
-    const shadowGeometry = new CircleGeometry(R * 0.9, 9)
-    shadowGeometry.applyMatrix4(
-      new Matrix4().identity().makeTranslation(0, 0, -R * 0.99)
-    )
-    const shadowMaterial = new MeshBasicMaterial({ color: 0x111122 })
-    this.shadow = new Mesh(shadowGeometry, shadowMaterial)
+    // Skip shadow creation in multiplayer mode for performance
+    if (!BallMesh.isMultiplayer) {
+      const shadowGeometry = new CircleGeometry(R * 0.9, 9)
+      // Shadow lies in the XY plane at z=0 (table surface), no rotation needed
+      const shadowMaterial = new MeshBasicMaterial({ color: 0x111122, transparent: true, opacity: 0.5 })
+      this.shadow = new Mesh(shadowGeometry, shadowMaterial)
+    }
     this.spinAxisArrow = new ArrowHelper(up, zero, 2, 0x000000, 0.01, 0.01)
     this.spinAxisArrow.visible = false
     this.trace = new Trace(500, color)
@@ -186,7 +216,9 @@ export class BallMesh {
 
   addToScene(scene) {
     scene.add(this.mesh)
-    scene.add(this.shadow)
+    if (this.shadow) {
+      scene.add(this.shadow)
+    }
     scene.add(this.spinAxisArrow)
     scene.add(this.trace.line)
   }
@@ -199,5 +231,58 @@ export class BallMesh {
 
   private scaleNoise(v) {
     return (1.0 - Math.random() * 0.25) * v
+  }
+
+  /**
+   * Update the ball number (used when server sends randomized rack).
+   * This will update the mesh to show the correct ball model/color.
+   */
+  setBallNumber(ballNumber: number) {
+    if (this.ballNumber === ballNumber) return  // No change needed
+    
+    this.ballNumber = ballNumber
+    this.isStripe = ballNumber > 8
+    
+    // Get color from ball number
+    const colorMap: Record<number, number> = {
+      0: 0xfaebd7,  // cue ball
+      1: 0xffcc00,  // yellow
+      2: 0x0000ff,  // blue
+      3: 0xff0000,  // red
+      4: 0x800080,  // purple
+      5: 0xff4500,  // orange
+      6: 0x008000,  // green
+      7: 0x8b0000,  // maroon/burgundy
+      8: 0x000000,  // black (8-ball)
+      9: 0xffcc00,  // yellow stripe
+      10: 0x0000ff, // blue stripe
+      11: 0xff0000, // red stripe
+      12: 0x800080, // purple stripe
+      13: 0xff4500, // orange stripe
+      14: 0x008000, // green stripe
+      15: 0x8b0000, // maroon stripe
+    }
+    
+    this.color = new Color(colorMap[ballNumber] ?? 0xeeeeee)
+    
+    // Store current position and parent scene
+    const currentPosition = this.mesh.position.clone()
+    const parentScene = this.mesh.parent
+    
+    // Remove old mesh from scene
+    if (parentScene) {
+      parentScene.remove(this.mesh)
+    }
+    
+    // Reinitialize with new ball number
+    this.initialiseMesh(this.color.getHex())
+    
+    // Restore position
+    this.mesh.position.copy(currentPosition)
+    
+    // Add back to scene
+    if (parentScene) {
+      parentScene.add(this.mesh)
+    }
   }
 }

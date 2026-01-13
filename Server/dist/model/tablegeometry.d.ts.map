@@ -1,0 +1,1 @@
+{"version":3,"file":"tablegeometry.d.ts","sourceRoot":"","sources":["../../src/model/tablegeometry.ts"],"names":[],"mappings":"AAAA;;GAEG;AAIH,qBAAa,aAAa;IACxB,MAAM,CAAC,MAAM,EAAE,MAAM,CAAA;IACrB,MAAM,CAAC,MAAM,EAAE,MAAM,CAAA;IACrB,MAAM,CAAC,CAAC,EAAE,MAAM,CAAA;IAChB,MAAM,CAAC,CAAC,EAAE,MAAM,CAAA;IAChB,MAAM,CAAC,UAAU,EAAE,OAAO,CAAO;IAMjC,MAAM,CAAC,aAAa,CAAC,CAAC,EAAE,MAAM;CAM/B"}

@@ -61,9 +61,14 @@ export class EightBall implements Rules {
 
   placeBall(target?): Vector3 {
     if (target) {
-      // During the break shot the cue must be placed behind the head string (kitchen).
-      // Also respect existing 'ballInHandBehindHeadString' flag for fouls that give kitchen placement.
-      if (this.isBreakShot || this.ballInHandBehindHeadString) {
+      // Check if we need to restrict placement to behind head string (kitchen)
+      // In server-authoritative mode, use container.behindHeadString
+      // Otherwise use local isBreakShot or ballInHandBehindHeadString flags
+      const restrictToKitchen = this.container?.useServerAuthoritative 
+        ? this.container.behindHeadString
+        : (this.isBreakShot || this.ballInHandBehindHeadString)
+      
+      if (restrictToKitchen) {
         // Behind head string (kitchen) only
         const max = new Vector3(-TableGeometry.X / 2, TableGeometry.tableY)
         const min = new Vector3(-TableGeometry.tableX, -TableGeometry.tableY)
@@ -76,8 +81,13 @@ export class EightBall implements Rules {
       }
     }
 
-    // Default: if it's the initial break place in the kitchen, otherwise default to the current cueball pos
-    if (this.isBreakShot) {
+    // Default starting position
+    // In server-authoritative mode, use container state
+    const isBreak = this.container?.useServerAuthoritative 
+      ? this.container.behindHeadString 
+      : this.isBreakShot
+    
+    if (isBreak) {
       return new Vector3((-R * 11) / 0.5, 0, 0)
     }
 

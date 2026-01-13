@@ -1,0 +1,1 @@
+{"version":3,"file":"collisionthrow.d.ts","sourceRoot":"","sources":["../../src/model/collisionthrow.ts"],"names":[],"mappings":"AAAA;;GAEG;AAGH,OAAO,EAAE,IAAI,EAAE,MAAM,QAAQ,CAAA;AAQ7B,qBAAa,cAAc;IACzB,aAAa,EAAE,MAAM,CAAI;IACzB,iBAAiB,EAAE,MAAM,CAAI;IAE7B,OAAO,CAAC,eAAe;IAIhB,gBAAgB,CAAC,CAAC,EAAE,IAAI,EAAE,CAAC,EAAE,IAAI,GAAG,MAAM;CAyDlD"}

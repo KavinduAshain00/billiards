@@ -47,6 +47,16 @@ export class Container {
   reportShotComplete: (potted: boolean, fouled: boolean, continuesTurn: boolean) => void = () => {}
   log: (text: string) => void
 
+  // Server-authoritative mode support
+  useServerAuthoritative: boolean = false
+  submitAuthoritativeShot: (aim: any) => void = () => {}
+  submitPlaceBall: (pos: { x: number; y: number; z: number }) => void = () => {}
+  
+  // Turn-based multiplayer state
+  isMyTurn: boolean = true
+  ballInHand: boolean = false
+  behindHeadString: boolean = false
+
   constructor(element, log, assets, ruletype?, keyboard?, id?) {
     this.log = log
     this.rules = RuleFactory.create(ruletype, this)
@@ -131,9 +141,12 @@ export class Container {
     if (this.table.allStationary()) {
       const event = this.eventQueue.shift()
       if (event) {
+        console.log("[ProcessEvents] Processing event:", event.constructor.name, "Controller:", this.controller.constructor.name)
         this.lastEventTime = performance.now()
         this.updateController(event.applyToController(this.controller))
       }
+    } else if (this.eventQueue.length > 0) {
+      console.log("[ProcessEvents] Waiting for table to be stationary. Queue:", this.eventQueue.length, "events")
     }
   }
 
@@ -162,4 +175,38 @@ export class Container {
       this.controller.onFirst()
     }
   }
+  
+  /**
+   * Set turn state for server-authoritative multiplayer
+   * Also controls cue visibility - hide cue when not your turn
+   */
+  setTurnState(isMyTurn: boolean, ballInHand: boolean = false, behindHeadString: boolean = false): void {
+    this.isMyTurn = isMyTurn
+    this.ballInHand = ballInHand
+    this.behindHeadString = behindHeadString
+    
+    // Update HUD to show current turn
+    if (this.hud?.updateTurn) {
+      this.hud.updateTurn(isMyTurn)
+    }
+    
+    // Hide cue when not your turn in multiplayer
+    if (this.useServerAuthoritative) {
+      this.table.cue.mesh.visible = isMyTurn
+      this.table.cue.helperMesh.visible = isMyTurn && this.table.cue.helperMesh.visible
+      this.table.cue.placerMesh.visible = isMyTurn && ballInHand
+    }
+    
+    console.log(`Turn state updated: myTurn=${isMyTurn}, ballInHand=${ballInHand}, behindHeadString=${behindHeadString}`)
+  }
+  
+  /**
+   * Send aim update to server for syncing to opponent
+   */
+  sendAimUpdate?: (angle: number, pos: { x: number; y: number; z: number }) => void
+  
+  /**
+   * Send ball position update during placement
+   */
+  sendBallPosUpdate?: (pos: { x: number; y: number; z: number }) => void
 }

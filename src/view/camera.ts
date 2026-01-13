@@ -13,6 +13,9 @@ export class Camera {
   mode = this.topView
   private mainMode = this.aimView
   private height = R * 8
+  
+  // Multiplayer mode - only allows top view
+  isMultiplayer: boolean = false
 
   elapsed: number
 
@@ -32,6 +35,11 @@ export class Camera {
   }
 
   aimView(aim: AimEvent, fraction = 0.08) {
+    // In multiplayer, always use top view
+    if (this.isMultiplayer) {
+      this.topView(aim)
+      return
+    }
     const h = this.height
     const portrait = this.camera.aspect < 0.8
     this.camera.fov = portrait ? 60 : 40
@@ -49,6 +57,8 @@ export class Camera {
   }
 
   adjustHeight(delta) {
+    // In multiplayer, ignore height adjustments that could change camera mode
+    if (this.isMultiplayer) return
     delta = this.height < 10 * R ? delta / 8 : delta
     this.height = MathUtils.clamp(this.height + delta, R * 6, R * 120)
     if (this.height > R * 110) {
@@ -66,23 +76,42 @@ export class Camera {
   }
 
   suggestMode(mode) {
+    // In multiplayer, only allow topView
+    if (this.isMultiplayer) {
+      this.mode = this.topView
+      return
+    }
     if (this.mainMode === this.aimView) {
       this.mode = mode
     }
   }
 
   forceMode(mode) {
+    // In multiplayer, always force topView regardless of requested mode
+    if (this.isMultiplayer) {
+      this.mode = this.topView
+      this.mainMode = this.topView
+      return
+    }
     this.mode = mode
     this.mainMode = mode
   }
 
   forceMove(aim: AimEvent) {
+    // In multiplayer, don't do forced aimView moves
+    if (this.isMultiplayer) return
     if (this.mode === this.aimView) {
       this.aimView(aim, 1)
     }
   }
 
   toggleMode() {
+    // In multiplayer, only top view is allowed
+    if (this.isMultiplayer) {
+      this.mode = this.topView
+      this.mainMode = this.topView
+      return
+    }
     if (this.mode === this.topView) {
       this.mode = this.aimView
     } else {

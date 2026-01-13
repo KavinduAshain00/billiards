@@ -26,7 +26,6 @@ import { StartAimEvent } from "../../src/events/startaimevent"
 import { Session } from "../../src/network/client/session"
 import { Spectate } from "../../src/controller/spectate"
 import { Init } from "../../src/controller/init"
-import { Replay } from "../../src/controller/replay"
 
 initDom()
 
@@ -35,6 +34,7 @@ describe("Controller", () => {
   let broadcastEvents: GameEvent[]
 
   beforeEach(function (done) {
+    Session.reset()  // Ensure clean session state
     container = new Container(
       document.getElementById("viewP1"),
       (_) => {},

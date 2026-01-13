@@ -30,6 +30,7 @@ export abstract class ControllerBase extends Controller {
     const cue = this.container.table.cue
     const delta = input.t * this.scale
     switch (input.key) {
+      // === Keyboard Controls ===
       case "ArrowLeft":
         cue.rotateAim(-delta, this.container.table)
         return true
@@ -48,16 +49,32 @@ export abstract class ControllerBase extends Controller {
       case "ShiftArrowRight":
         cue.adjustSpin(new Vector3(-delta, 0), this.container.table)
         return true
-      case "KeyPUp":
-        exportGltf(this.container.view.scene)
+        
+      // === Mouse/Touch Drag Controls ===
+      // dragRotate: Horizontal drag rotates cue aim (input.t = pixels dragged)
+      case "dragRotate":
+        // Reduced sensitivity: smaller rotation per pixel
+        cue.rotateAim(-input.t * 0.0015, this.container.table)
         return true
-      case "KeyHUp":
-        cue.toggleHelper()
+      // dragPower: Vertical drag adjusts power (input.t = pixels, positive = up = more power)
+      case "dragPower":
+        // Reduced sensitivity for power adjustments
+        cue.adjustPower(input.t * 0.08)
         return true
+        
+      // === Legacy mouse events (for backward compatibility) ===
       case "movementXUp":
         cue.rotateAim(-delta * 2, this.container.table)
         return true
       case "movementYUp":
+        if (this.container.useServerAuthoritative) {
+          cue.adjustPower(-delta * 0.5)
+        } else {
+          this.container.view.camera.adjustHeight(-delta * 8)
+        }
+        return true
+        
+      // === Utility Keys ===
       case "NumpadSubtract":
         this.container.view.camera.adjustHeight(-delta * 8)
         return true
@@ -66,6 +83,12 @@ export abstract class ControllerBase extends Controller {
         return true
       case "KeyOUp":
         this.container.view.camera.toggleMode()
+        return true
+      case "KeyPUp":
+        exportGltf(this.container.view.scene)
+        return true
+      case "KeyHUp":
+        cue.toggleHelper()
         return true
       case "KeyDUp":
         this.togglePanel()
