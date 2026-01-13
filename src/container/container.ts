@@ -38,6 +38,7 @@ export class Container {
   rules: Rules
   menu: Menu
   frame: (timestamp: number) => void
+  hud: any
 
   last = performance.now()
   readonly step = 0.001953125 * 1
@@ -63,6 +64,23 @@ export class Container {
     this.recorder = new Recorder(this)
     this.id = id
     this.menu = new Menu(this)
+
+    // instantiate rule-specific HUD
+    try {
+      const { SnookerHud, EightBallHud, Hud } = require("../view/hud")
+      if (ruletype === "snooker") {
+        this.hud = new SnookerHud()
+      } else if (ruletype === "eightball") {
+        this.hud = new EightBallHud()
+      } else {
+        this.hud = new Hud()
+      }
+    } catch (e) {
+      // In environments without DOM (some tests), fallback to base Hud
+      const { Hud } = require("../view/hud")
+      this.hud = new Hud()
+    }
+
     this.table.addToScene(this.view.scene)
     this.updateController(new Init(this))
   }

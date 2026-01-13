@@ -5,6 +5,9 @@ import { EightBall } from "../../src/controller/rules/eightball"
 import { Vector3 } from "three"
 import { R } from "../../src/model/physics/constants"
 import { TableGeometry } from "../../src/view/tablegeometry"
+import { initDom } from "../view/dom"
+
+initDom()
 
 describe("EightBall placeBall", () => {
   let container: Container
@@ -79,5 +82,23 @@ describe("EightBall placeBall", () => {
     const rack = require("../../src/utils/rack").Rack
     expect(table.cueball.pos.x).to.equal(rack.spot.x)
     expect(table.cueball.pos.y).to.equal(rack.spot.y)
+  })
+
+  it("creates an EightBallHud and updates group + break", () => {
+    // container should have an EightBallHud instance
+    const EightBallHudClass = require("../../src/view/hud").EightBallHud
+    expect(container.hud).to.be.instanceof(EightBallHudClass)
+
+    // update break and ensure HUD element reflects it
+    rules.currentBreak = 3
+    container.hud.updateBreak(3)
+    const el = document.getElementById("eightBallBreak")
+    expect(el?.innerHTML).to.contain("3")
+
+    // assign groups and check HUD update
+    const ball = container.table.balls.find(b => b.ballmesh.ballNumber === 2)
+    rules.assignGroups(ball!)
+    const groupEl = document.getElementById("eightBallGroup")
+    expect(groupEl?.innerHTML.toLowerCase()).to.contain("solids")
   })
 })

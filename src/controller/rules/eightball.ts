@@ -37,6 +37,8 @@ export class EightBall implements Rules {
   startTurn() {
     this.previousBreak = this.currentBreak
     this.currentBreak = 0
+    // update HUD
+    this.container?.hud?.updateBreak(this.currentBreak)
   }
 
   nextCandidateBall() {
@@ -125,15 +127,19 @@ export class EightBall implements Rules {
 
   assignGroups(pottedBall: Ball) {
     if (this.playerGroup !== null) return // Already assigned
-    
-    if (pottedBall.id >= 1 && pottedBall.id <= 7) {
+
+    const n = (pottedBall as any).ballmesh?.ballNumber ?? pottedBall.id
+
+    if (n >= 1 && n <= 7) {
       this.playerGroup = "solids"
       this.opponentGroup = "stripes"
       this.container.eventQueue.push(new ChatEvent(null, "You are solids"))
-    } else if (pottedBall.id >= 9 && pottedBall.id <= 15) {
+      this.container?.hud?.updateGroups(this.playerGroup)
+    } else if (n >= 9 && n <= 15) {
       this.playerGroup = "stripes"
       this.opponentGroup = "solids"
       this.container.eventQueue.push(new ChatEvent(null, "You are stripes"))
+      this.container?.hud?.updateGroups(this.playerGroup)
     }
   }
 
@@ -226,7 +232,7 @@ export class EightBall implements Rules {
     if (this.isBreakShot) {
       this.isBreakShot = false
       
-      // Rule 7: Scratch on legal break
+        // Rule 7: Scratch on legal break
       if (cueBallPotted) {
         const legalBreak = this.isLegalBreak(outcome)
         if (legalBreak) {
@@ -235,6 +241,8 @@ export class EightBall implements Rules {
           this.startTurn()
           // Reset cue ball to spot for the foul
           this.container.table.cueball.pos.copy(Rack.spot)
+          // update HUD
+          this.container?.hud?.updateBreak(this.currentBreak)
           if (this.container.isSinglePlayer) {
             return new PlaceBall(this.container)
           }
@@ -248,6 +256,8 @@ export class EightBall implements Rules {
           this.startTurn()
           // Reset cue ball to spot for the foul
           this.container.table.cueball.pos.copy(Rack.spot)
+          // update HUD
+          this.container?.hud?.updateBreak(this.currentBreak)
           if (this.container.isSinglePlayer) {
             return new PlaceBall(this.container)
           }
@@ -352,6 +362,8 @@ export class EightBall implements Rules {
       this.startTurn()
       // Reset cue ball to spot for the foul (so placement starts from a known consistent position)
       this.container.table.cueball.pos.copy(Rack.spot)
+      // update HUD
+      this.container?.hud?.updateBreak(this.currentBreak)
       if (this.container.isSinglePlayer) {
         return new PlaceBall(this.container)
       }
@@ -386,10 +398,14 @@ export class EightBall implements Rules {
         this.playerGroup = "solids"
         this.opponentGroup = "stripes"
         this.container.eventQueue.push(new ChatEvent(null, "You are solids"))
+        // update HUD
+        this.container?.hud?.updateGroups(this.playerGroup)
       } else if (firstPot.id >= 9 && firstPot.id <= 15) {
         this.playerGroup = "stripes"
         this.opponentGroup = "solids"
         this.container.eventQueue.push(new ChatEvent(null, "You are stripes"))
+        // update HUD
+        this.container?.hud?.updateGroups(this.playerGroup)
       }
     }
     
