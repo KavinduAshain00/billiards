@@ -3,6 +3,7 @@ import { WatchEvent } from "../events/watchevent"
 import { Controller } from "./controller"
 import { WatchAim } from "./watchaim"
 import { ControllerBase } from "./controllerbase"
+import { Aim } from "./aim"
 import { BreakEvent } from "../events/breakevent"
 import { PlaceBall } from "./placeball"
 import { Spectate } from "./spectate"
@@ -59,7 +60,6 @@ export class Init extends ControllerBase {
   override handleStartAim(_event: StartAimEvent): Controller {
     // Server-authoritative: our turn, normal aim (no ball in hand)
     console.log("[Init] handleStartAim - transitioning to Aim")
-    const { Aim } = require("./aim")
     return new Aim(this.container)
   }
 }

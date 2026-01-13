@@ -9,6 +9,7 @@
  */
 
 import { io, Socket } from "socket.io-client";
+import * as msgpackParser from "socket.io-msgpack-parser";
 import { SnapshotBuffer, TableSnapshot } from "./snapshotbuffer";
 
 export interface AimData {
@@ -276,7 +277,7 @@ export class SocketIOMessageRelay {
     // NOTE: Server uses default JSON parser, not msgpack
     this.socket = io(this.serverUrl, {
       // Connection options
-      parser: require("socket.io-msgpack-parser"),
+      parser: msgpackParser,
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: 1000,

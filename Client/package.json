@@ -8,7 +8,8 @@
     "billiards",
     "snooker",
     "threejs",
-    "swc",
+    "vite",
+    "react",
     "physics"
   ],
   "license": "GPL-3.0",
@@ -18,17 +19,22 @@
   "scripts": {
     "test": "jest --config ./test/jest.config.js --verbose",
     "coverage": "jest --config ./test/jest.config.js --coverage",
-    "dev": "webpack",
-    "prettify": "prettier --cache true --write --trailing-comma es5 --no-semi {src,test}/**/*.[jt]s dist/**/*.{css,html} *.[jt]s *.json",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prettify": "prettier --cache true --write --trailing-comma es5 --no-semi {src,test}/**/*.[jt]sx? *.{css,html} *.[jt]s *.json",
     "markdownlint": "npx markdownlint-cli2 README.md --fix",
-    "serve": "webpack serve",
+    "serve": "vite",
     "deps": "npx yarn-check --skip-unused",
-    "gltfpack": "npx gltfpack -i dist/models/p8.gltf -o dist/models/p8.min.gltf && npx gltfpack -i dist/models/threecushion.gltf -o dist/models/threecushion.min.gltf && npx gltfpack -i dist/models/snooker.gltf -o dist/models/snooker.min.gltf && npx gltfpack -i dist/models/d-snooker.gltf -o dist/models/d-snooker.min.gltf"
+    "gltfpack": "npx gltfpack -i public/models/p8.gltf -o public/models/p8.min.gltf && npx gltfpack -i public/models/threecushion.gltf -o public/models/threecushion.min.gltf && npx gltfpack -i public/models/snooker.gltf -o public/models/snooker.min.gltf && npx gltfpack -i public/models/d-snooker.gltf -o public/models/d-snooker.min.gltf"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
     "interactjs": "1.10.27",
     "jsoncrush": "^1.1.8",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-router-dom": "^7.12.0",
     "socket.io-client": "^4.8.3",
     "socket.io-msgpack-parser": "^3.0.2",
     "three": "0.182.0"
@@ -36,24 +42,27 @@
   "devDependencies": {
     "@swc/core": "1.15.8",
     "@swc/jest": "0.2.39",
+    "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "10.4.1",
     "@types/chai": "5.2.3",
     "@types/jest": "30.0.0",
-    "@types/node": "25.0.7",
+    "@types/node": "25.0.8",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
     "@types/three": "0.182.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.23",
     "chai": "6.2.2",
     "jest": "30.2.0",
     "jest-environment-jsdom": "30.2.0",
     "node-notifier": "^10.0.1",
+    "postcss": "^8.5.6",
     "prettier": "3.7.4",
-    "swc-loader": "^0.2.6",
+    "tailwindcss": "^4.1.18",
+    "terser": "^5.31.0",
     "ts-jest": "29.4.6",
-    "ts-loader": "9.5.4",
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",
-    "webpack": "5.104.1",
-    "webpack-cli": "6.0.1",
-    "webpack-dev-server": "5.2.3",
-    "webpack-node-externals": "^3.0.0"
+    "vite": "^6.4.1"
   }
 }

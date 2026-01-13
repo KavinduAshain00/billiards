@@ -66,3 +66,4 @@ connect4withReact/
 /Client/.env
 /Server/logs
 /Server/dist
+/Client/dist

@@ -1,9 +1,10 @@
 {
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "vite.config.ts"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "commonjs",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "noImplicitAny": false,
     "strictNullChecks": true,
     "noUnusedLocals": true,
@@ -17,8 +18,15 @@
     "strictPropertyInitialization": false,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
-    "moduleResolution": "Node",
-    "target": "ES5",
-    "sourceMap": true
+    "target": "ESNext",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   }
 }

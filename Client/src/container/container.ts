@@ -18,6 +18,7 @@ import { Rules } from "../controller/rules/rules"
 import { RuleFactory } from "../controller/rules/rulefactory"
 import { Menu } from "../view/menu"
 import { BallMesh } from "../view/ballmesh"
+import { SnookerHud, EightBallHud, Hud } from "../view/hud"
 
 /**
  * Model, View, Controller container.
@@ -76,18 +77,11 @@ export class Container {
     this.menu = new Menu(this)
 
     // instantiate rule-specific HUD
-    try {
-      const { SnookerHud, EightBallHud, Hud } = require("../view/hud")
-      if (ruletype === "snooker") {
-        this.hud = new SnookerHud()
-      } else if (ruletype === "eightball") {
-        this.hud = new EightBallHud()
-      } else {
-        this.hud = new Hud()
-      }
-    } catch (e) {
-      // In environments without DOM (some tests), fallback to base Hud
-      const { Hud } = require("../view/hud")
+    if (ruletype === "snooker") {
+      this.hud = new SnookerHud()
+    } else if (ruletype === "eightball") {
+      this.hud = new EightBallHud()
+    } else {
       this.hud = new Hud()
     }
 
