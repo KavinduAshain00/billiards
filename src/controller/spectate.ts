@@ -1,6 +1,6 @@
 import { ControllerBase } from "./controllerbase"
 import { AimEvent, Controller, HitEvent, Input } from "./controller"
-import { MessageRelay } from "../network/client/messagerelay"
+import { MessageRelay } from "../network/client/messagerelay.ts"
 import { EventUtil } from "../events/eventutil"
 import { GameEvent } from "../events/gameevent"
 

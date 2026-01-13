@@ -12,7 +12,7 @@ import JSONCrush from "jsoncrush"
 import { Assets } from "../view/assets"
 import { Session } from "../network/client/session"
 import { MessageRelay } from "../network/client/messagerelay"
-import { SocketIOMessageRelay } from "../network/client/socketiomessagerelay"
+import { NchanMessageRelay } from "../network/client/nchanmessagerelay"
 import { BeginEvent } from "../events/beginevent"
 
 /**
@@ -41,20 +41,17 @@ export class BrowserContainer {
   now
   constructor(canvas3d, params) {
     this.now = Date.now()
-    // Don't read player name or websocket server from the URL anymore.
-    // Name will be fetched from the backend via /api/getPlayerDetails, and
-    // websocket backend URL should be injected into the frontend build or
-    // available via window.BACKEND_URL. Fallback to localhost:3000.
-    this.playername = ""
-    this.tableId = params.get("tableId") ?? params.get("gameSessionUuid") ?? "default"
-    this.clientId = params.get("clientId") ?? params.get("uuid") ?? "default"
+    this.playername = params.get("name") ?? ""
+    this.tableId = params.get("tableId") ?? "default"
+    this.clientId = params.get("clientId") ?? "default"
     this.replay = params.get("state")
-    this.ruletype = params.get("ruletype") ?? "eightball"
+    this.ruletype = params.get("ruletype") ?? "nineball"
+    this.wss = params.get("websocketserver")
     this.canvas3d = canvas3d
     this.cushionModel = this.cushion(params.get("cushionModel"))
     this.spectator = params.has("spectator")
     this.first = params.has("first")
-    // Session.init will be called after we fetch the player's name from backend
+    Session.init(this.clientId, this.playername, this.tableId, this.spectator)
   }
 
   cushion(model) {
@@ -97,68 +94,15 @@ export class BrowserContainer {
       return
     }
 
-    // Determine backend server URL (prefer window.BACKEND_URL if injected at build/runtime)
-    const serverURL = (window as any).BACKEND_URL || 'http://localhost:3000'
-
-    if (!this.spectator) {
-      // Fetch player's name from backend instead of relying on URL
-      fetch(`${serverURL}/api/getPlayerDetails?gameSessionUuid=${this.tableId}&uuid=${this.clientId}`)
-        .then(async (r) => {
-          if (!r.ok) throw new Error('Player details not found')
-          const data = await r.json()
-          this.playername = data.player?.name || ''
-        })
-        .catch((err) => {
-          console.warn('Could not fetch player details, continuing without name', err)
-          this.playername = ''
-        })
-        .finally(() => {
-          this.container.isSinglePlayer = false
-          // Reuse existing messageRelay if present to avoid duplicate sockets
-          if (!this.messageRelay) {
-            this.messageRelay = new SocketIOMessageRelay(serverURL)
-          }
-
-          // Initialize session now that we have (maybe) the name
-          Session.init(this.clientId, this.playername, this.tableId, this.spectator)
-
-          // Connect to the server and join the table
-          ;(this.messageRelay as SocketIOMessageRelay)
-            .connect(this.tableId, this.clientId, this.playername, this.spectator)
-            .then(() => {
-              console.log(`${this.playername} connected to Socket.IO server`)
-              // Subscribe to game events
-              this.messageRelay!.subscribe(this.tableId, (e) => {
-                this.netEvent(e)
-              })
-
-              // First player starts the game
-              if (this.first && !this.spectator) {
-                this.broadcast(new BeginEvent())
-              }
-            })
-            .catch((error) => {
-              console.error('Failed to connect to server:', error)
-              alert('Failed to connect to game server. Please try again.')
-            })
-        })
-    } else {
-      // Spectator: init session without fetching player details
+    if (this.wss) {
       this.container.isSinglePlayer = false
-      Session.init(this.clientId, this.playername, this.tableId, this.spectator)
-      if (!this.messageRelay) {
-        this.messageRelay = new SocketIOMessageRelay(serverURL)
+      this.messageRelay = new NchanMessageRelay()
+      this.messageRelay.subscribe(this.tableId, (e) => {
+        this.netEvent(e)
+      })
+      if (!this.first && !this.spectator) {
+        this.broadcast(new BeginEvent())
       }
-
-      ;(this.messageRelay as SocketIOMessageRelay)
-        .connect(this.tableId, this.clientId, this.playername, this.spectator)
-        .then(() => {
-          console.log('Spectator connected to Socket.IO server')
-          this.messageRelay!.subscribe(this.tableId, (e) => this.netEvent(e))
-        })
-        .catch((error) => {
-          console.error('Failed to connect as spectator:', error)
-        })
     }
 
     if (this.replay) {
