@@ -59,7 +59,9 @@ export class EightBall implements Rules {
 
   placeBall(target?): Vector3 {
     if (target) {
-      if (this.ballInHandBehindHeadString) {
+      // During the break shot the cue must be placed behind the head string (kitchen).
+      // Also respect existing 'ballInHandBehindHeadString' flag for fouls that give kitchen placement.
+      if (this.isBreakShot || this.ballInHandBehindHeadString) {
         // Behind head string (kitchen) only
         const max = new Vector3(-TableGeometry.X / 2, TableGeometry.tableY)
         const min = new Vector3(-TableGeometry.tableX, -TableGeometry.tableY)
@@ -71,8 +73,13 @@ export class EightBall implements Rules {
         return target.clamp(min, max)
       }
     }
-    // Default: Place in kitchen (behind head string)
-    return new Vector3((-R * 11) / 0.5, 0, 0)
+
+    // Default: if it's the initial break place in the kitchen, otherwise default to the current cueball pos
+    if (this.isBreakShot) {
+      return new Vector3((-R * 11) / 0.5, 0, 0)
+    }
+
+    return this.container.table ? this.container.table.cueball.pos.clone() : new Vector3(0, 0, 0)
   }
 
   asset(): string {
@@ -198,6 +205,8 @@ export class EightBall implements Rules {
         this.isBreakShot = false
         this.ballInHandBehindHeadString = true
         this.startTurn()
+        // Reset cue ball to spot for the foul
+        this.container.table.cueball.pos.copy(Rack.spot)
         if (this.container.isSinglePlayer) {
           return new PlaceBall(this.container)
         }
@@ -224,6 +233,8 @@ export class EightBall implements Rules {
           this.container.eventQueue.push(new ChatEvent(null, "Scratch on break. Ball in hand behind head string"))
           this.ballInHandBehindHeadString = true
           this.startTurn()
+          // Reset cue ball to spot for the foul
+          this.container.table.cueball.pos.copy(Rack.spot)
           if (this.container.isSinglePlayer) {
             return new PlaceBall(this.container)
           }
@@ -235,6 +246,8 @@ export class EightBall implements Rules {
           this.container.eventQueue.push(new ChatEvent(null, "Illegal break. Opponent may re-rack or shoot"))
           this.ballInHandBehindHeadString = true
           this.startTurn()
+          // Reset cue ball to spot for the foul
+          this.container.table.cueball.pos.copy(Rack.spot)
           if (this.container.isSinglePlayer) {
             return new PlaceBall(this.container)
           }
@@ -337,6 +350,8 @@ export class EightBall implements Rules {
       this.container.eventQueue.push(new ChatEvent(null, "Foul: Scratch. Opponent gets ball in hand"))
       this.ballInHandBehindHeadString = false
       this.startTurn()
+      // Reset cue ball to spot for the foul (so placement starts from a known consistent position)
+      this.container.table.cueball.pos.copy(Rack.spot)
       if (this.container.isSinglePlayer) {
         return new PlaceBall(this.container)
       }
@@ -352,6 +367,8 @@ export class EightBall implements Rules {
       this.ballInHandBehindHeadString = false
       this.startTurn()
       this.container.sendEvent(new StartAimEvent())
+      // Reset cueball to spot for the foul
+      this.container.table.cueball.pos.copy(Rack.spot)
       if (this.container.isSinglePlayer) {
         this.container.sendEvent(new WatchEvent(table.serialise()))
         return new PlaceBall(this.container)
