@@ -67,3 +67,5 @@ connect4withReact/
 /Server/logs
 /Server/dist
 /Client/dist
+/Super-Tic-Tac-Toe
+/Server/dist
