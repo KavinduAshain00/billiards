@@ -23,10 +23,6 @@ export default defineConfig({
       safari10: true,
     },
   },
-  server: {
-    port: 8080,
-    host: "0.0.0.0",
-  },
   resolve: {
     extensions: [".tsx", ".ts", ".jsx", ".js"],
     alias: {

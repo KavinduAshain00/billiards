@@ -1,9 +1,7 @@
 {
   "name": "billiards",
   "description": "Billiards",
-  "version": "0.3.1",
-  "author": "tailuge",
-  "homepage": "https://github.com/tailuge",
+  "version": "1.3.1",
   "keywords": [
     "billiards",
     "snooker",
@@ -12,21 +10,12 @@
     "react",
     "physics"
   ],
-  "license": "GPL-3.0",
-  "engines": {
-    "yarn": "1.x"
-  },
   "scripts": {
     "test": "jest --config ./test/jest.config.js --verbose",
     "coverage": "jest --config ./test/jest.config.js --coverage",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "prettify": "prettier --cache true --write --trailing-comma es5 --no-semi {src,test}/**/*.[jt]sx? *.{css,html} *.[jt]s *.json",
-    "markdownlint": "npx markdownlint-cli2 README.md --fix",
-    "serve": "vite",
-    "deps": "npx yarn-check --skip-unused",
-    "gltfpack": "npx gltfpack -i public/models/p8.gltf -o public/models/p8.min.gltf && npx gltfpack -i public/models/threecushion.gltf -o public/models/threecushion.min.gltf && npx gltfpack -i public/models/snooker.gltf -o public/models/snooker.min.gltf && npx gltfpack -i public/models/d-snooker.gltf -o public/models/d-snooker.min.gltf"
+    "preview": "vite preview"
   },
   "dependencies": {
     "cross-fetch": "^4.1.0",
